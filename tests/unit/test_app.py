@@ -1,5 +1,6 @@
 import pytest
 import mock
+import os
 
 
 from awsshell import app
@@ -167,6 +168,17 @@ def test_history_stored_correctly():
     # two calls should have been made, history should have added aws
     assert mock_prompter.run.call_count == 2
     assert list(shell.history) == ['aws ec2 describe-instances']
+
+
+def test_spawned_commands_do_not_inherit_aws_data_path():
+    # awsshell's own imports set AWS_DATA_PATH to its bundled awscli data.
+    # Leaking it to spawned aws commands crashes AWS CLI v2.
+    os.environ['AWS_DATA_PATH'] = '/tmp/somewhere/awscli/data'
+    try:
+        shell = app.AWSShell(mock.Mock(), mock.Mock(), mock.Mock())
+    finally:
+        del os.environ['AWS_DATA_PATH']
+    assert 'AWS_DATA_PATH' not in shell._env
 
 
 def test_exit_dot_command_exits_shell():

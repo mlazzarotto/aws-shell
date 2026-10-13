@@ -237,6 +237,11 @@ class AWSShell(object):
         self.key_manager = None
         self._dot_cmd = DotCommandHandler()
         self._env = os.environ.copy()
+        # Importing awsshell pulls in botocore, which sets AWS_DATA_PATH to
+        # aws-shell's bundled awscli data. Passing that to spawned commands
+        # makes a v2 aws load v1's option table and crash with
+        # "'Namespace' object has no attribute 'cli_binary_format'".
+        self._env.pop('AWS_DATA_PATH', None)
         self._profile = None
         self._input = input
         self._output = output
